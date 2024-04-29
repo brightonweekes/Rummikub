@@ -1,4 +1,5 @@
 import random
+import os
 import pygame
 
 # Define global variables
@@ -7,7 +8,8 @@ backdrop_color = '#325320'
 player_count = 2
 current_player = 0
 starting_tile_count = 14
-display_resolution = (screen_width, screen_height) = (1600, 900)
+screen_resolution = screen_width, screen_height = 1600, 900
+title = 'Rummikub'
 
 
 # Define the Tile class and give it color and value attributes
@@ -31,11 +33,6 @@ class Player:
 
     def place(self):
         pass
-
-
-def resize_screen():
-    global tile_holder
-    tile_holder = pygame.transform.scale(tile_holder, (screen_width*.8, screen_height*.15))
 
 
 # Main game turn logic
@@ -78,18 +75,30 @@ for player in range(player_count):
     for starting_tile in range(starting_tile_count):
         players[player].draw()
 
-# Load UI Elements
-tile_holder = pygame.image.load('./uiImages/tile_holder.png')
-# done button
 
-
-
-resize_screen()
 
 # pygame setup
 pygame.init()
-screen = pygame.display.set_mode(display_resolution)
+screen = pygame.display.set_mode(screen_resolution)
 clock = pygame.time.Clock()
+
+# Load UI Elements
+tile_holder = pygame.image.load('uiImages/tile_holder.jpg').convert_alpha()
+tile_holder = pygame.transform.scale(tile_holder, (screen_width*.9, screen_height*.15))
+tile_rect = tile_holder.get_rect(midbottom = (screen_width/2, screen_height))
+
+joker_icon = pygame.image.load('uiImages/joker_face.png').convert_alpha()
+
+done_image = pygame.image.load('uiImages/done.png').convert_alpha()
+done_image = pygame.transform.smoothscale_by(done_image, .33)
+done_rect = done_image.get_rect(center = (screen_width-100, screen_height-300))
+
+undo_image = pygame.image.load('uiImages/undo_image.jpg').convert_alpha()
+undo_rect = undo_image.get_rect(center = (screen_width-100, screen_height-500))
+
+pygame.display.set_caption(title)
+pygame.display.set_icon(joker_icon)
+
 running = True
 
 while running:
@@ -98,13 +107,16 @@ while running:
             running = False
 
     screen.fill(backdrop_color)
-    screen.blit(tile_holder, (screen_width/2-tile_holder.get_width()/2, screen_height-tile_holder.get_height()))
+    screen.blit(tile_holder, tile_rect)
+    screen.blit(done_image, done_rect)
+    screen.blit(undo_image, undo_rect)
+
+
 
     main()
 
-    # flip() the display to put your work on screen
-    pygame.display.flip()
+    pygame.display.update()
 
-    clock.tick(fps)  # limits FPS to 60
+    clock.tick(fps)
 
 pygame.quit()

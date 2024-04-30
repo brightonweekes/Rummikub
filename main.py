@@ -17,7 +17,6 @@ class Tile:
     def __init__(self, color, value):
         self.color = color
         self.value = value
-        on_board = False
 
 
 # Define the Player class and assign functions
@@ -32,15 +31,22 @@ class Player:
         deck.pop(0)
 
 
-
+# Passes turn to next player
 def pass_turn():
     global current_player
     current_player = (current_player+1) % player_count
 
 
+# Determines how a tile should look and draws it to screen
 def render_tile(tile):
     global tile_grid
-
+    if tile[2] == 0:
+        tile[0].fill('#325320')
+    elif tile[2] == 1:
+        tile[0].fill('#1E5E1C')
+    else:
+        tile[0].fill('black')
+    screen.blit(tile[0], tile[1])
 
 
 # Define the deck and fill it with appropiate tiles
@@ -108,23 +114,24 @@ running = True
 
 while running:                   
 
-    screen.fill(backdrop_color)     # new item gets overwritten here
+    screen.fill(backdrop_color) 
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.MOUSEMOTION:
-            for tile_row in enumerate(tile_grid):
-                for tile_pos in enumerate(tile_row[1]):
-                    if tile_pos[1][1].collidepoint(event.pos):
-                        # print('collided with rectangle starting at '+str(tile_pos[1][1].left)+str(tile_pos[1][1].top))
-                        tile_pos[1][0].fill('#1E5E1C')
-                    else:
-                        tile_pos[1][0].fill('#325320')
-                    screen.blit(tile_pos[1][0], tile_pos[1][1])
-    
+
+    for tile_row in enumerate(tile_grid):
+        for tile_pos in enumerate(tile_row[1]):
+            if tile_pos[1][1].collidepoint(pygame.mouse.get_pos()):
+                # print('collided with rectangle starting at '+str(tile_pos[1][1].left)+str(tile_pos[1][1].top))
+                tile_pos[1][2] = 1
+            else:
+                tile_pos[1][2] = 0
+            render_tile(tile_pos[1])
+
     screen.blit(tile_holder, tile_rect)
     screen.blit(done_image, done_rect)
+
 
     for tile in players[player].hand:
         screen.blit(tile_images[tile.color-1][tile.value-1], (0, 0))

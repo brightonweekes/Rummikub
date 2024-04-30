@@ -31,25 +31,16 @@ class Player:
         self.hand.append(deck[0])
         deck.pop(0)
 
-    def place(self):
-        pass
-
-
-# Main game turn logic
-def main():
-    pass
-    
-
-# Check if current board state is correct
-def check_board():
-    valid_board = False
-
-    return valid_board
 
 
 def pass_turn():
     global current_player
     current_player = (current_player+1) % player_count
+
+
+def render_tile(tile):
+    global tile_grid
+
 
 
 # Define the deck and fill it with appropiate tiles
@@ -67,15 +58,20 @@ random.shuffle(deck)
 # Backend setup
 board = []              # List containing all lists of tiles on board
 board_backup = []       # Stores board as it was in beginning of turn
-ui_board = []           # Stores coordinate locations for each tile displayed on the board
-ui_board_backup = []    # Stores ui board as it was in beginning of turn
+
+# Creates a global grid on whch all tiles will be placed
+tile_grid = []
+for row in range(9):
+    tile_grid.append([])
+    for pos in range(15):
+        tile_grid[row].append([pygame.Surface((100, 100)), pygame.Rect(pos*100, row*100, 100, 100), 0])     # Each grid tile has a surface, a Rect for storing location, 
+                                                                                                            #and a value which determines what is displayed
+
 players = []            # List containing all Player objects
 for player in range(player_count):
     players.append(Player())
     for starting_tile in range(starting_tile_count):
         players[player].draw()
-
-
 
 # pygame setup
 pygame.init()
@@ -90,30 +86,49 @@ tile_rect = tile_holder.get_rect(midbottom = (screen_width/2, screen_height))
 joker_icon = pygame.image.load('uiImages/joker_face.png').convert_alpha()
 
 done_image = pygame.image.load('uiImages/done.png').convert_alpha()
-done_image = pygame.transform.smoothscale_by(done_image, .33)
-done_rect = done_image.get_rect(center = (screen_width-100, screen_height-300))
+done_image = pygame.transform.smoothscale_by(done_image, .20)
+done_rect = done_image.get_rect(center = (screen_width-50, screen_height-300))
 
-undo_image = pygame.image.load('uiImages/undo_image.jpg').convert_alpha()
-undo_rect = undo_image.get_rect(center = (screen_width-100, screen_height-500))
+tile_images = [[], [], [], []]
 
+for image in os.listdir('uiImages/'):
+    if image[0].isdigit():
+        tile_images[int(image[0])-1].append(pygame.image.load(f'uiImages/{image}').convert_alpha())
+
+for color in range(len(tile_images)):
+    for tile in range(len(tile_images[color])):
+        tile_images[color][tile] = pygame.transform.smoothscale_by(tile_images[color][tile], .10)
+
+# Set tite and caption
 pygame.display.set_caption(title)
 pygame.display.set_icon(joker_icon)
 
+# Main loop
 running = True
 
-while running:
+while running:                   
+
+    screen.fill(backdrop_color)     # new item gets overwritten here
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
-    screen.fill(backdrop_color)
+        if event.type == pygame.MOUSEMOTION:
+            for tile_row in enumerate(tile_grid):
+                for tile_pos in enumerate(tile_row[1]):
+                    if tile_pos[1][1].collidepoint(event.pos):
+                        # print('collided with rectangle starting at '+str(tile_pos[1][1].left)+str(tile_pos[1][1].top))
+                        tile_pos[1][0].fill('#1E5E1C')
+                    else:
+                        tile_pos[1][0].fill('#325320')
+                    screen.blit(tile_pos[1][0], tile_pos[1][1])
+    
     screen.blit(tile_holder, tile_rect)
     screen.blit(done_image, done_rect)
-    screen.blit(undo_image, undo_rect)
 
+    for tile in players[player].hand:
+        screen.blit(tile_images[tile.color-1][tile.value-1], (0, 0))
 
-
-    main()
 
     pygame.display.update()
 

@@ -23,30 +23,11 @@ class Tile:
 class Player:
     def __init__(self):
         self.hand = []
-        self.hand_backup = []
         self.has_placed = False     # Store whether the player has placed their initial sets adding to 30 or greater
 
     def draw(self):
         self.hand.append(deck[0])
         deck.pop(0)
-
-
-# Passes turn to next player
-def pass_turn():
-    global current_player
-    current_player = (current_player+1) % player_count
-
-
-# Determines how a tile should look and draws it to screen
-def render_tile(tile):
-    global tile_grid
-    if tile[2] == 0:
-        tile[0].fill('#325320')
-    elif tile[2] == 1:
-        tile[0].fill('#1E5E1C')
-    else:
-        tile[0].fill('black')
-    screen.blit(tile[0], tile[1])
 
 
 # Define the deck and fill it with appropiate tiles
@@ -63,15 +44,13 @@ random.shuffle(deck)
 
 # Backend setup
 board = []              # List containing all lists of tiles on board
-board_backup = []       # Stores board as it was in beginning of turn
 
 # Creates a global grid on whch all tiles will be placed
 tile_grid = []
 for row in range(9):
     tile_grid.append([])
     for pos in range(15):
-        tile_grid[row].append([pygame.Surface((100, 100)), pygame.Rect(pos*100, row*100, 100, 100), 0])     # Each grid tile has a surface, a Rect for storing location, 
-                                                                                                            #and a value which determines what is displayed
+        tile_grid[row].append([pygame.Surface((100, 100)), pygame.Rect(pos*100, row*100, 100, 100), None])     # Each grid tile has a surface, a Rect for storing location
 
 players = []            # List containing all Player objects
 for player in range(player_count):
@@ -87,7 +66,7 @@ clock = pygame.time.Clock()
 # Load UI Elements
 tile_holder = pygame.image.load('uiImages/tile_holder.jpg').convert_alpha()
 tile_holder = pygame.transform.scale(tile_holder, (screen_width*.9, screen_height*.15))
-tile_rect = tile_holder.get_rect(midbottom = (screen_width/2, screen_height))
+tile_rect = tile_holder.get_rect(bottomleft = (30, 880))
 
 joker_icon = pygame.image.load('uiImages/joker_face.png').convert_alpha()
 
@@ -105,6 +84,10 @@ for color in range(len(tile_images)):
     for tile in range(len(tile_images[color])):
         tile_images[color][tile] = pygame.transform.smoothscale_by(tile_images[color][tile], .10)
 
+main_font = pygame.font.Font(None, 50)
+current_player_surface = main_font.render(str(current_player), True, 'black').convert_alpha()
+current_player_rect = current_player_surface.get_rect(topright = (1580, 100))
+
 # Set tite and caption
 pygame.display.set_caption(title)
 pygame.display.set_icon(joker_icon)
@@ -114,27 +97,54 @@ running = True
 
 while running:                   
 
+    tile_has_placed = False
     screen.fill(backdrop_color) 
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if done_rect.collidepoint(event.pos):                       # If the continue button is pressed
+                if tile_has_placed:
+                    pass
+                # check board state to see if its valid
+                else:
+                    players[current_player].draw()
+                
+                    current_player = (current_player+1) % player_count      # Pass to next player
+                    current_player_surface = main_font.render(str(current_player), True, 'black').convert_alpha()
+
+            for tile_row in tile_grid:
+                for tile_pos in tile_row:
+                    if tile_pos[1].collidepoint(event.pos):
+                        if tile_pos[2] != None:
+                            pass
+
+
+
+
+
+
 
     for tile_row in enumerate(tile_grid):
         for tile_pos in enumerate(tile_row[1]):
             if tile_pos[1][1].collidepoint(pygame.mouse.get_pos()):
-                # print('collided with rectangle starting at '+str(tile_pos[1][1].left)+str(tile_pos[1][1].top))
-                tile_pos[1][2] = 1
+                tile_pos[1][0].fill('#1E5E1C')
             else:
-                tile_pos[1][2] = 0
-            render_tile(tile_pos[1])
+                tile_pos[1][0].fill('#325320')
+            screen.blit(tile_pos[1][0], tile_pos[1][1])
 
     screen.blit(tile_holder, tile_rect)
     screen.blit(done_image, done_rect)
+    screen.blit(current_player_surface, current_player_rect)
 
 
-    for tile in players[player].hand:
-        screen.blit(tile_images[tile.color-1][tile.value-1], (0, 0))
+    for tile in enumerate(players[current_player].hand):
+        screen.blit(tile_images[tile[1].color-1][tile[1].value-1], (tile[0]%15*100, 800 - tile[0]//15*100))     # Draws each tile in player hand at correct location
+        for row in tile_grid:
+            for pos in row:
+                if pos[1].collidepoint((tile[0]%15*100, 800 - tile[0]//15*100)):
+                    pos[2] = tile[1]        # Stores what tile is at each location in the tile_grid
 
 
     pygame.display.update()
